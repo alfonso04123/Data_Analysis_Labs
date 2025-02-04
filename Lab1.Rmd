@@ -1,0 +1,113 @@
+---
+title: "Lab 1 output"
+author: "Yanzhe Qu"
+date: "2024-10-01"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Solution:
+Here we import our data:
+```{r}
+
+df = read.csv("/Users/alfonsoqu/Desktop/ASU/2024Fall/DAT 301/Lab 1/Absenteeism_at_work.csv", 
+              sep=";", header = TRUE)
+
+```
+
+We use these commands: head and str, in order to have a basic understanding about out data set.
+```{r}
+head(df, 3)
+str(df)
+```
+
+##Question 1
+Plot the scatter plot of height vs. weight
+```{r}
+x = df$Weight
+y = df$Height
+plot(x,y,pch = 16, xlab="Weight", 
+                   ylab="Height", 
+                   main = "Height vs Weight")
+```
+
+It seems that as the weight increases the height increases as well.
+```{r}
+cor(x,y)
+```
+
+\break
+##Question 2
+Plot the histogram of hours of absences.
+```{r}
+Hours = df$Absenteeism.time.in.hours
+hist(Hours, main = "Histogram of Absence Hours")
+```
+
+\break
+We use more breaks for a clear visualization
+```{r}
+Hours = df$Absenteeism.time.in.hours
+hist(Hours, main = "Histogram of Absence Hours", breaks = 120)
+```
+
+We can find out how manay people absent for at most 10 hours.
+```{r}
+sum(Hours <= 10)
+length(Hours[Hours <= 10])
+```
+
+\break
+##Question 3
+Plot the histogram of age of persons of absences
+```{r}
+Age = df$Age
+hist(Age, main = "Histogram of Age of Absence")
+```
+
+\break
+##Question 4
+Plot the bar of absence hours by month
+```{r}
+df_filtered <- df[df$Month.of.absence != 0, ]
+sum <- tapply(X=df_filtered$Absenteeism.time.in.hours, INDEX=df_filtered$Month, FUN=sum)
+barplot(sum, ylim=c(0,900), col="lightyellow", main="Frequency of Absent Hours by Month") 
+
+```
+
+\break
+##Question 5
+Box plot absence hours by social smoker
+```{r}
+df_filtered <- df[df$Absenteeism.time.in.hours != 0, ]
+
+boxplot(df_filtered$Absenteeism.time.in.hours~df_filtered$Social.smoker,
+        main = "Box Plot of Absence Hours by Social Smoker Status",
+        xlab = "Social Smoker Absence Status",
+        ylab = "Absence in Hours",
+        col = c("lightblue", "salmon"),
+        names = c("Non-Smokers", "Smokers"),
+        las = 1,
+        ylim = c(0, 30))
+```
+As shown in the plot, social smoker does not have a highter absence rate than non-smokers.
+
+\break
+##Question 6
+Box plot absence hours by social drinker
+```{r}
+df_filtered <- df[df$Absenteeism.time.in.hours != 0, ]
+
+boxplot(df_filtered$Absenteeism.time.in.hours~df_filtered$Social.drinker,
+        main = "Box Plot of Absence Hours by Social Drinker Status",
+        xlab = "Social Drinker Absence Status",
+        ylab = "Absence in Hours",
+        col = c("lightgreen", "orange"),
+        names = c("Sobers", "Drinkers"),
+        las = 1,
+        ylim = c(0, max(df$Absenteeism.time.in.hours, na.rm = TRUE) + 10))
+```
+As shown in the plot, social drinker have a little bit more absence rate than sobers.

@@ -1,0 +1,211 @@
+---
+title: "Statistical Inference"
+output: ioslides_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(ggplot2)
+library(plotly)
+```
+<!--
+Format for title
+-->
+<style type="text/css">
+h1{
+  position: fixed;
+  top: 30%;
+  left: 50%;
+  transform: translate(-52%, -25%);
+  white-space: nowrap;
+  color: #52be80 !important;
+}
+</style>
+
+<!--
+Format for header of each slide
+-->
+<style type="text/css", font_size = "25"px>
+h2{
+  color: #8e44ad;
+  font-family: Modern Computer Roman;
+}
+</style>
+
+
+## Overview of Inference
+
+**What is statistical inference?**
+
+Statistical inference provides methods for drawing conclusions about a population from sample data.
+
+<div style="text-align: center;">
+![](Population-Sample.png){width=80%}
+</div>
+
+
+
+## Overview of Inference
+
+There are two prominent techniques involved in Statistical Inference
+
+- Confidence Intervals
+- Hypothesis Tests
+
+We will talking about confidence intervals today.
+
+<div style="text-align: center;">
+![](Confidence Interval.png){width=60%}
+</div>
+
+
+
+## Statistical Confidence
+
+Here we have to involve a concept: **CONFIDENCE LEVEL**.
+
+<p>Confidence Level, or C, is the overall capture rate if the method is used many times.</p>
+If we want to call it "CONFIDENCE", we need to reach 95%, which indicate in previous
+
+<div style="text-align: center;">
+![](Confidence Interval.png){width=60%}
+</div>
+
+<p style="font-size:16px; text-align: center;"> \*The Green and Blue parts together are 95%.</p>
+
+\newpage
+
+## Confidence Interval Formula
+
+To get the confidence interval, we need apply this formula
+
+$$
+\bar{x} \pm z * \frac{\sigma}{\sqrt{n}}
+$$
+<p>
+In this formula, $\bar{x}$ represent the sample mean that we get from all Simple Random Sample
+</p>
+
+<p>
+We need convert all these sample mean $\bar{x}$ 
+in Normal distribution $X \sim \text{Normal}(\mu, \sigma)$
+
+
+## Confidence Interval Calculation
+<p>
+We pick our simple random sample with 16 observations from Normal population with mean $\mu$ and set standard deviation $\sigma = 20$. We get a mean of random normal distribution $\mu = 240.79$.
+</p>
+<p>
+Also, we can use this formula to calculate **number of observations** we have
+</p>
+<p>
+$$
+n = \left(\frac{{z \cdot \sigma}}{m}\right)^2
+$$
+
+## Confidence Interval Calculation
+<div style="font-size: 20px; color: gray">
+  - Continued from previous page
+</div>
+
+Then we plug value of $\bar{x} = 240.79$ and number of observation n=16, standard deviation$\sigma = 20$ in to the equation
+
+
+$$
+\bar{x} \pm z * \frac{\sigma}{\sqrt{n}}
+$$
+We can get
+$$
+240.79 \pm 1.96 * \frac{20}{\sqrt{16}} = (230.99, 250.59)
+$$
+This is our confidence interval.
+
+
+## Simple Example with Confidence band
+<p style="color:#f1c40f ;", font_size= "20"px>
+There are several ways to plot confidence interval in ggplot
+</p>
+
+```{r, echo=TRUE, fig.show = "hide"}
+xAxis <- 1:200 
+yAxis <- rnorm(200) + xAxis / 10 
+lowBand <- yAxis + rnorm(200, - 1.5, 0.1) 
+highBand <- yAxis + rnorm(200, + 1.5, 0.1)
+sample_data <- data.frame(xAxis, yAxis, lowBand, highBand)
+
+ggplot(sample_data, aes(xAxis, yAxis)) +    
+          geom_point()+ 
+  geom_ribbon(aes(ymin = lowBand, ymax = highBand),  
+                      alpha = 0.2, fill="green", color="green")
+```
+
+## Simple Example with Confidence band
+
+Here are the explanation about those variables in previous page:
+
+<p style="color:#2980b9;", font_size= "20"px>
+xAxis: Sequence from 1 to 200, representing the x-axis values.
+</p>
+<p style="color:#eb984e;", font_size= "20"px>
+yAxis: Normally distributed random values with a slight upward trend (xAxis / 10), representing the main data points.
+</p>
+<p style="color:#ec7063;", font_size= "20"px>
+lowBand and highBand: 
+</p>
+<p style="color:#ec7063;", font_size= "20"px>
+Calculated as yAxis values plus random noise, centered around -1.5 and +1.5, respectively. These represent the lower and upper boundaries for a band around the yAxis values.
+</p>
+
+
+## Simple Example with Confidence band
+<p style="color:#52be80 ;", font_size= "20"px>
+This is the plot show with confident band
+</p>
+
+```{r}
+xAxis <- 1:200 
+yAxis <- rnorm(200) + xAxis / 10 
+lowBand <- yAxis + rnorm(200, - 1.5, 0.1) 
+highBand <- yAxis + rnorm(200, + 1.5, 0.1)
+sample_data <- data.frame(xAxis, yAxis, lowBand, highBand)
+
+ggplot(sample_data, aes(xAxis, yAxis)) +    
+          geom_point()+ 
+  geom_ribbon(aes(ymin = lowBand, ymax = highBand),  
+                      alpha = 0.2, fill="green", color="green")
+
+```
+
+## Plotly for Confidence Interval
+
+<p style="color:#dc7633; font-size: 20px;">
+We will use the internal data "mtcars" as a simple example to express Confidence Interval in Plotly:
+</p>
+
+<p style="color:#dc7633; font-size: 20px;">
+From this plot, the light blue band is confidence interval for each value
+</p>
+
+```{r}
+p <- ggplot(data=mtcars, aes(x=mpg, y=wt)) +
+  geom_point() +
+  geom_smooth(method=lm, formula = y ~ x, 
+              level=0.95, color='red', fill='lightblue')
+
+plotly_p <- ggplotly(p)
+plotly_p
+```
+
+## Confidence Interval with Regrassion
+
+<p style="color:#3498db; font-size: 25px;">
+As previous page, we use **"mtcars"** for linear regression, with confidence interval
+</p>
+
+```{r}
+ggplot(data=mtcars, aes(x=mpg, y=wt)) +
+  geom_point() +
+  geom_smooth(method=lm, formula = y ~ x, level=0.95,
+              color='red', fill='lightblue')
+```
+

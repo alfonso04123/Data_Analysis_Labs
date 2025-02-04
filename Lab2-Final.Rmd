@@ -1,0 +1,391 @@
+---
+title: "DAT 301 Lab 2"
+author: "Yanzhe Qu"
+date: "2024-10-24"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+library(ggplot2movies) 
+library(ggplot2)
+library(tidyr)
+```
+
+#Question 1
+Find the range of years of production of the movies in data set
+```{r}
+oldest <- min(movies$year)
+oldest
+
+recent <-max(movies$year)
+recent
+```
+With our code, it show the oldest movie was produced in 1893, the most recent movie was in 2005
+
+
+\break
+#Question 2
+Find the proportion with budget inclued in the data set, and the proportioni without dataset. Also top 5 most expensive movies
+```{r}
+total <- length(movies$budget)
+with_budget <- sum(!is.na(movies$budget))
+
+with_budget_proportion <- with_budget / total
+with_budget_proportion
+
+wituout_budget <- sum(is.na(movies$budget))
+
+without_budget_proportion <- wituout_budget / total
+without_budget_proportion
+
+top <- arrange(movies, desc(budget))
+head(top)
+```
+From the result it show that most of movies in data set is without budget, only 8.87% movies in this data set have budget information.
+
+Also the most expensive movie is Spider-Man 2 as shown in tibble table.
+
+\break
+##Question 3
+Find top 5 longest movies
+```{r}
+longest <- arrange(movies, desc(length))
+longest[1:5,]
+```
+We use arrange() in dplyr, with descending order. Then subtract first 5 rows.
+
+\break
+##Question 4
+```{r}
+short_movies = filter(select(movies, title, year, Short, everything())
+                      , Short==1)
+shortest <- arrange(short_movies, (short_movies$length))
+head(shortest)
+  
+longest <- arrange(short_movies, desc(short_movies$length))
+head(longest)
+
+shortest_minute <- min(shortest$length)
+shortest_minute
+longest_minute <- max(longest$length)
+longest_minute
+```
+To have a clear view of which is Short movie, we use select() to put Short genre to the 3rd position, then combine with filter(), subtract Short movie, then sort them with ascending and descending order.
+
+From the result, we get the shortest movies is 1 minute, the longest movie in the data base is 240 minutes
+
+\break
+##Question 5
+```{r}
+genre_counts <- colSums(movies[, c("Action", "Animation", "Comedy", 
+                            "Drama", "Documentary", "Romance", 
+                            "Short")])
+genre_counts
+                            
+barplot_heights <-barplot(genre_counts, 
+                          main = "Amount of movies in each genre ",
+                          xlab = "Name of Genre",
+                          ylab = "Number of movies",
+                          ylim = c(0, max(genre_counts) * 1.3),
+                          col = rainbow(length(genre_counts)),
+                          beside = TRUE)
+
+text(x=barplot_heights,
+     y=genre_counts + 5,
+     labels=genre_counts,
+     pos=3,
+     cex=0.8)
+
+legend("topright", inset = c(0.15, 0), 
+       cex = 0.8, pt.cex = 0.8,
+       legend = names(genre_counts), 
+       fill = rainbow(length(genre_counts)))
+```
+The largest quantity movie is drama, reach to 21811. The smallest genre is documentary, reach to 3472
+
+
+\break
+#Question 6
+```{r}
+rating_action <- movies %>%
+  filter(Action == 1) %>%
+  summarise(action_ave = mean(rating))
+
+rating_animation <- movies %>%
+  filter(Animation == 1) %>%
+  summarise(animation_ave = mean(rating))
+
+rating_comedy <- movies %>%
+  filter(Comedy == 1) %>%
+  summarise(comedy_ave = mean(rating))
+
+rating_drama <- movies %>%
+  filter(Drama == 1) %>%
+  summarise(drama_ave = mean(rating))
+
+rating_doc <- movies %>%
+  filter(Documentary == 1) %>%
+  summarise(doc_ave = mean(rating))
+
+rating_romance <- movies %>%
+  filter(Romance == 1) %>%
+  summarise(romance_ave = mean(rating))
+
+rating_short <- movies %>%
+  filter(Short == 1) %>%
+  summarise(short_ave = mean(rating))
+
+rate <- c(rating_action$action_ave, rating_animation$animation_ave, 
+          rating_comedy$comedy_ave, rating_drama$drama_ave, 
+          rating_doc$doc_ave, rating_romance$romance_ave,
+          rating_short$short_ave)
+
+names(rate) <- c("action", "animation", "comedy", "drama",
+                 "doc", "romance", "short")
+rate
+
+rate_df <- tibble(
+  Genre = names(rate),
+  Average_Rating = rate)
+  
+ggplot(rate_df, aes(x=Genre, y=Average_Rating, fill=Genre)) + 
+  geom_bar(stat = "identity", width = 0.7) + 
+  geom_text(aes(label = sprintf("%.3f", Average_Rating)),
+            position = position_stack(vjust = 1.1),
+            color = "black",
+            size = 3.5) +
+  theme_minimal() + 
+  ggtitle("Distribution of Average Ratings by Genre") +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+From the result, we can find out animation has the highest average rate, action has the lowest average rate.
+
+
+\break
+#Question 7
+```{r}
+rating_action <- movies %>%
+  filter(Action == 1 & year %in% c(1999, 2004)) %>%
+  summarise(action_ave = mean(rating))
+
+rating_animation <- movies %>%
+  filter(Animation == 1 & year %in% c(1999, 2004)) %>%
+  summarise(animation_ave = mean(rating))
+
+rating_comedy <- movies %>%
+  filter(Comedy == 1 & year %in% c(1999, 2004)) %>%
+  summarise(comedy_ave = mean(rating))
+
+rating_drama <- movies %>%
+  filter(Drama == 1 & year %in% c(1999, 2004)) %>%
+  summarise(drama_ave = mean(rating))
+
+rating_doc <- movies %>%
+  filter(Documentary == 1 & year %in% c(1999, 2004)) %>%
+  summarise(doc_ave = mean(rating))
+
+rating_romance <- movies %>%
+  filter(Romance == 1 & year %in% c(1999, 2004)) %>%
+  summarise(romance_ave = mean(rating))
+
+rating_short <- movies %>%
+  filter(Short == 1 & year %in% c(1999, 2004)) %>%
+  summarise(short_ave = mean(rating))
+
+rate <- c(rating_action$action_ave, rating_animation$animation_ave, 
+          rating_comedy$comedy_ave, rating_drama$drama_ave, 
+          rating_doc$doc_ave, rating_romance$romance_ave,
+          rating_short$short_ave)
+names(rate) <- c("action", "animation", "comedy", "drama",
+                 "doc", "romance", "short")
+rate
+
+rate_df <- tibble(
+  Genre = names(rate),
+  Average_Rating = rate)
+
+ggplot(rate_df, aes(x=Genre, y=Average_Rating, fill=Genre)) + 
+  geom_bar(stat = "identity", width = 0.7) + 
+  scale_fill_viridis_d() + 
+  geom_text(aes(label = sprintf("%.3f", Average_Rating)),
+            position = position_stack(vjust = 1.1),
+            color = "black",
+            size = 3.5) +
+  theme_minimal() + 
+  ggtitle("Distribution of Average Ratings by Genre between 2000 and 2025") +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+During 2000-2005, documentary has the highest average rating, action still has the lowest average rating.
+
+\break
+#Question 8
+```{r}
+action_summary <- movies %>%
+  filter(year >= 1990, Action == 1) %>%
+  group_by(year) %>%
+  summarise(Action = n())
+
+animation_summary <- movies %>%
+  filter(year >= 1990, Animation == 1) %>%
+  group_by(year) %>%
+  summarise(Animation = n())
+
+comedy_summary <- movies %>%
+  filter(year >= 1990, Comedy == 1) %>%
+  group_by(year) %>%
+  summarise(Comedy = n())
+
+doc_summary <- movies %>%
+  filter(year >= 1990, Documentary == 1) %>%
+  group_by(year) %>%
+  summarise(Documentary = n())
+
+drama_summary <- movies %>%
+  filter(year >= 1990, Drama == 1) %>%
+  group_by(year) %>%
+  summarise(Drama = n())
+
+romance_summary <- movies %>%
+  filter(year >= 1990, Romance == 1) %>%
+  group_by(year) %>%
+  summarise(Romance = n())
+
+short_summary <- movies %>%
+  filter(year >= 1990, Short == 1) %>%
+  group_by(year) %>%
+  summarise(Short = n())
+
+yearly_summary <- left_join(action_summary, animation_summary, by="year") %>%
+  left_join(comedy_summary, doc_summary, by="year") %>%
+  left_join(drama_summary, doc_summary, by="year") %>%
+  left_join(doc_summary, romance_summary, by="year") %>%
+  left_join(short_summary, by="year")
+
+yearly_summary
+
+long_summary <- pivot_longer(
+  yearly_summary,
+  cols = "Action":"Short",
+  names_to = "Genre",
+  values_to = "Amount"
+)
+
+ggplot(long_summary, aes(x = year, y = Amount, color = Genre)) +
+  geom_line() +
+  labs(title = "Yearly Genre Trends") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+Since 1990, Drama always have the largest amount of production, Animation always have the smallest amount.
+But there is a huge falling of all kinds of movies, maybe because the sample is not enough like other years.
+
+
+\break
+#Question 9
+#Question 9.1
+Which movie has the highest rating in this data set
+```{r}
+highest <- movies %>%
+  slice_max(rating)
+
+highest
+```
+There are 3 movies with the highest rating of 10 in this data base.
+
+#Question 9.2
+What is the average length of each genre?
+```{r}
+length_action <- movies %>%
+  filter(Action == 1) %>%
+  summarise(action_length = mean(length))
+
+length_animation <- movies %>%
+  filter(Animation == 1) %>%
+  summarise(animation_length = mean(length))
+
+length_comedy <- movies %>%
+  filter(Comedy == 1) %>%
+  summarise(comedy_length = mean(length))
+
+length_drama <- movies %>%
+  filter(Drama == 1) %>%
+  summarise(drama_length = mean(length))
+
+length_doc <- movies %>%
+  filter(Documentary == 1) %>%
+  summarise(doc_length = mean(length))
+
+length_romance <- movies %>%
+  filter(Romance == 1) %>%
+  summarise(romance_length = mean(length))
+
+length_short <- movies %>%
+  filter(Short == 1) %>%
+  summarise(short_length = mean(length))
+
+length <- c(length_action$action_length, length_animation$animation_length, 
+          length_comedy$comedy_length, length_drama$drama_length, 
+          length_doc$doc_length, length_romance$romance_length,
+          length_short$short_length)
+
+names(length) <- c("action", "animation", "comedy", "drama",
+                 "doc", "romance", "short")
+length
+
+length_df <- tibble(
+  Genre = names(length),
+  Average_Length = length)
+  
+ggplot(length_df, aes(x=Genre, y=Average_Length, fill=Genre)) + 
+  geom_bar(stat = "identity", width = 0.5) + 
+  theme_minimal() +
+  geom_text(aes(label = sprintf("%.3f", Average_Length)),
+            position = position_stack(vjust = 1.1),
+            color = "black",
+            size = 3.5) +
+  theme_minimal() + 
+  ggtitle("Distribution of Average Length by Genre") +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+Romance movie has the longest average length of all movies, short movie definitely has the shortest average length.
+
+
+\break
+#Question 9.3
+What is the amount of mpaa of each genre?
+```{r}
+action_mpaa <- movies %>%
+  filter(!is.null(mpaa), Action == 1) %>%
+  summarise(Action = n())
+
+animation_mpaa <- movies %>%
+  filter(!is.null(mpaa), Animation == 1) %>%
+  summarise(Animation = n())
+
+comedy_mpaa <- movies %>%
+  filter(!is.null(mpaa), Comedy == 1) %>%
+  summarise(Comedy = n())
+
+doc_mpaa <- movies %>%
+  filter(!is.null(mpaa), Documentary == 1) %>%
+  summarise(Documentary = n())
+
+drama_mpaa <- movies %>%
+  filter(!is.null(mpaa), Drama == 1) %>%
+  summarise(Drama = n())
+
+romance_mpaa <- movies %>%
+  filter(!is.null(mpaa), Romance == 1) %>%
+  summarise(Romance = n())
+
+short_mpaa <- movies %>%
+  filter(!is.null(mpaa), Short == 1) %>%
+  summarise(Short = n())
+
+mpaa <- data.frame(action_mpaa, animation_mpaa, comedy_mpaa, doc_mpaa,
+          drama_mpaa, romance_mpaa, short_mpaa)
+mpaa
+```

@@ -1,0 +1,251 @@
+---
+title: "DAT 301 Project 1"
+author: "Yanzhe Qu"
+date: "2024-10-15"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(cluster)
+library(factoextra)
+library(forecast)
+library(readr)
+```
+
+## **Chinese Economic Analysis**
+
+Intro:
+
+This data set including GDP of all Chinese provinces from 1992 to 2020. We want to analysis this data set, find out in China which province has the best economic now, or in the past, or other analysis we can summarize from this data set.
+```{r}
+gdp <- read.csv("~/Desktop/ASU/2024Fall/DAT 301/Project 1/ChinaGDP.csv")
+colnames(gdp)[1] <- "Year"
+options(scipen = 100)
+gdp[,1:6]
+```
+\newpage
+
+Since the data contain too much columns, we will analysis these data step by step, make it easier to see.
+\break
+
+First, let's look at which province in China has the highest GDP during these years.
+
+```{r}
+sum_gdp <- colSums(gdp[,-1])
+total_gdp <- data.frame(sum_gdp)
+total_gdp
+
+barplot(sum_gdp,
+        xlab = "Province",
+        ylab = "GDP",
+        ylim = c(0, max(sum_gdp) * 1.2),
+        main = "Total GDP of All Province (1992-2020)",
+        col = rainbow(length(sum_gdp)))
+
+```
+\break
+From the bar plot, we can see the GDP among Chinese provinces is unbalanced. There is a huge gap between the best GDP province and the lowest GDP province. Let's find out which province has the best GDP and which has the lowest.
+
+```{r}
+max <- max(sum_gdp)
+most_gdp <- names(which.max(sum_gdp))
+max_data <- data.frame(most_gdp, max)
+max_data
+
+min <- min(sum_gdp)
+min_gdp <- names(which.min(sum_gdp))
+min_data <- data.frame(min_gdp, min)
+min_data
+```
+
+Since we find the highest sum and lowest sum, we go deeper to analysis these data. We can compare the difference between 1992 and 2020, to see how fast the GDP grown during these years.
+```{r}
+lastest <- gdp[1,]
+lastest
+
+earliest <- gdp[nrow(gdp),]
+earliest
+
+combined <- rbind(lastest, earliest)
+combined
+
+new <- data.frame(t(combined[,-1]))
+colnames(new)[1]<- "2020"
+colnames(new)[2]<- "1992"
+new$Province <- rownames(new)
+
+data_long <- pivot_longer(new, cols = c('1992', '2020'), names_to = "Year", values_to = "GDP")
+
+ggplot(data_long, aes(x = Province, y = GDP, fill = Year)) +
+  geom_bar(stat = "identity", position = position_dodge()) +
+  labs(title = "Comparison of Province GDP between 1992 and 2020",
+       x = "Province",
+       y = "GDP Value",
+       fill = "Year") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        plot.title = element_text(hjust = 0.5))
+
+```
+\newpage
+But how exactly one Province's GDP developed? Let's use Beijing as an Example. As a capital city of China, the development of its GDP can partially represent the development of Chinese economic. Let's us the plot to show the trend of growth of Beijing
+```{r}
+capital <- gdp$Beijing
+ggplot(gdp, aes(x=Year, y=capital)) +
+  geom_bar(stat = "identity", fill = "#f5b041") +
+  theme_minimal() +
+  labs(x = "Year",
+       y = "GDP",
+       title = "GDP of Beijing 1992 - 2020") +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+But at the beginning, we found out Tibet has the lowest GDP, does it mean there is no development during these years? Let's find out.
+```{r}
+nums <- gdp$Tibet
+ggplot(gdp, aes(x=Year, y=nums)) +
+  geom_bar(stat = "identity", fill = "#27ae60") +
+  theme_minimal() +
+  labs(x = "Year",
+       y = "GDP",
+       title = "GDP of Tibet 1992 - 2020") +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+We may get confused, this is the same development like Beijing, but actually the GDP value is not the same. Let's first find the GDP value of Tibet in 1992, then value of 2020. Then we calculate the growth rate.
+```{r}
+grow <- max(gdp$Tibet)
+original <-min(gdp$Tibet)
+growth <- c(original, grow)
+growth
+
+increment <- (grow - original) / original
+increment
+
+barplot(growth,
+        xlab = "Year",
+        ylab = "GDP",
+        ylim = c(0, max(growth)* 1.1),
+        main = "GDP of Tibet 1992 and 2020",
+        col = '#3498db')
+```
+In this comparison, we can easily find out Tibet also have an indescribably growth during these years. And based on GDP of 2020 and GDP and 1992, there are 5600% increment during there years.
+
+So from this case, we can understand the importance of unit and number of amount that we are using during statistics, this also applies the ethic of Data Science.
+\newpage
+
+China has joined WTO in 2001, and the economic grown rapidly since 2002, we want to use our data set to show if it is true for all provinces in China. We will first calculate the increment of all province from 1992 to 2001, and the increment from 2002 to 2020
+```{r}
+gdp_filtered <- gdp[20:nrow(gdp), 2:ncol(gdp)]
+gdp_filtered$Year <- gdp$Year[20:nrow(gdp)]
+gdp_long <- pivot_longer(gdp_filtered, cols = -Year, names_to = "Region", values_to = "GDP")
+
+ggplot(gdp_long, aes(x = Region, y = GDP, fill = factor(Year))) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(title = "GDP Increment before 2001", x = "Region", y = "GDP") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1),
+        plot.title = element_text(hjust = 0.5))
+
+```
+This plot shows that most province in China has a left skewed plot, it means most province had a sharply increment even before China join WTO, let's analysis what will happen after 2001
+\newpage
+
+
+```{r}
+gdp_filtered <- gdp[1:19, 2:ncol(gdp)]
+gdp_filtered$Year <- gdp$Year[1:19]
+gdp_long <- pivot_longer(gdp_filtered, cols = -Year, names_to = "Region", values_to = "GDP")
+
+ggplot(gdp_long, aes(x = Region, y = GDP, fill = factor(Year))) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(title = "GDP Increment After 2001", x = "Region", y = "GDP") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1),
+        plot.title = element_text(hjust = 0.5))
+```
+
+\newpage
+From these two plots, except the amount of GDP value has a very obvious difference, there is no to much difference if we directly see from the plot. To see the difference clearly, let's calculate the difference of GDP from 1992 to 2001, then the same difference from 2002 to 2020.
+\break
+
+```{r}
+before <- (gdp[20, ] - gdp[29, ]) / gdp[29, ]
+before_data <- before[,-1]
+after <- (gdp[1, ] - gdp[19, ]) / gdp[19, ]
+after_data <- after[,-1]
+compare <- rbind(before, after)
+compare <- compare[, -1]
+
+compare_long <- compare %>%
+  pivot_longer(cols = everything(), names_to = "Region", values_to = "GDP") %>%
+  mutate(ID = rep(c("Before", "After"), each = ncol(compare)))
+
+ggplot(compare_long, aes(x = Region, y = GDP, fill = factor(ID))) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(title = "GDP Growth Comparison by Region", x = "Region", y = "GDP Growth") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1),
+        plot.title = element_text(hjust = 0.5)) +
+  scale_fill_brewer(palette = "Set1", name = "Join WTO")
+```
+From this comparison plot, we are clear to see the rapidly growth of GDP of China after join WTO. 
+\newpage
+
+Now we are trying to do clustering about data, to check those province who has the similar GDP value, and group them together for future analysis.
+
+First, we set our sequence generation to 1:10 to check the result.
+```{r}
+gdp <- gdp %>% 
+  t() %>%  
+  as.data.frame() 
+  
+row.names(gdp) <- NULL
+gdp_scaled <- scale(gdp)
+
+set.seed(123)
+wss <- sapply(1:10, function(k){kmeans(gdp_scaled, k, nstart = 20)$tot.withinss})
+plot(1:10, wss, type = "b", pch = 19, frame = FALSE, xlab = "Number of clusters", ylab = "Total within-cluster sum of squares")
+
+k <- 3
+clust <- kmeans(gdp_scaled, centers = k, nstart = 25)
+fviz_cluster(clust, data = gdp_scaled)
+
+```
+\newpage
+Now we are considering to looking for the trend of GDP of all province, to see which province growth rapidly, which are not.
+```{r}
+gdp <- read.csv("~/Desktop/ASU/2024Fall/DAT 301/Project 1/ChinaGDP.csv")
+colnames(gdp)[1] <- "Year"
+gdp_long <- gdp %>%
+  pivot_longer(-Year, names_to = "Region", values_to = "GDP")
+
+summary_stats <- gdp_long %>%
+  group_by(Region) %>%
+  summarize(Mean = mean(GDP, na.rm = TRUE),
+            Median = median(GDP, na.rm = TRUE),
+            SD = sd(GDP, na.rm = TRUE))
+
+ggplot(gdp_long, aes(x = Year, y = GDP, color = Region)) +
+  geom_line() +
+  theme_minimal() +
+  labs(title = "GDP Trends by Region", x = "Year", y = "GDP (in Billion Yuan)")
+```
+\newpage
+
+After we had trend of GDP of all province, we want to figure out if all of these province still can maintain a strong GDP develop rate in the future, to forecast its GDP for furture years.
+```{r}
+gdp_growth <- gdp_long %>%
+  arrange(Region, Year) %>%
+  group_by(Region) %>%
+  mutate(GrowthRate = (GDP / lag(GDP) - 1) * 100) %>%
+  filter(!is.na(GrowthRate))
+
+ggplot(gdp_growth, aes(x = Year, y = GrowthRate, color = Region)) +
+  geom_line() +
+  theme_minimal() +
+  labs(title = "Annual GDP Growth Rates by Region", x = "Year", y = "Growth Rate (%)")
+```
+
+From this result, all those provinces may not have a strong potential but some of them still keep more than 3% growth rate.
